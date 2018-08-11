@@ -53,6 +53,8 @@ type Handshake struct {
 	Version string
 
 	Token string
+
+	Name string
 }
 
 func (r *Handshake) UnmarshalBinary(data []byte) error {
@@ -62,6 +64,7 @@ func (r *Handshake) UnmarshalBinary(data []byte) error {
 	r.ShortCommitID = d.String()
 	r.CommitID = d.String()
 	r.Token = d.String()
+	r.Name = d.String()
 	return nil
 }
 
@@ -72,6 +75,7 @@ func (h Handshake) MarshalBinary() ([]byte, error) {
 	e.WriteString(h.ShortCommitID)
 	e.WriteString(h.CommitID)
 	e.WriteString(h.Token)
+	e.WriteString(h.Name)
 	return e.Bytes(), nil
 }
 

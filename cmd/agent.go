@@ -47,24 +47,30 @@ func init() {
 func serve(c *cli.Context) error {
 	options := []server.OptionFn{}
 
-	if v := c.GlobalString("server"); v != "" {
-		options = append(options, server.WithServer(v))
-	} else {
-		ec := cli.NewExitError(fmt.Errorf(color.RedString("No target server set.")), 1)
-		return ec
+	v := c.GlobalString("server")
+	if v == "" {
+		return cli.NewExitError(fmt.Errorf(color.RedString("No target server set.")), 1)
 	}
+	options = append(options, server.WithServer(v))
 
-	if key := c.GlobalString("remote-key"); key != "" {
-		options = append(options, server.WithKey(key))
-	} else {
-		ec := cli.NewExitError(fmt.Errorf(color.RedString("No remote key set.")), 1)
-		return ec
+	key := c.GlobalString("remote-key")
+	if key == "" {
+		return cli.NewExitError(fmt.Errorf(color.RedString("No remote key set.")), 1)
 	}
+	options = append(options, server.WithKey(key))
 
-	if d := c.String("data"); d == "" {
-	} else if fn, err := server.WithDataDir(d); err != nil {
-		ec := cli.NewExitError(err.Error(), 1)
-		return ec
+	name := c.GlobalString("name")
+	if name == "" {
+		return cli.NewExitError(fmt.Errorf(color.RedString("No name set.")), 1)
+	}
+	options = append(options, server.WithName(name))
+
+	d := c.String("data")
+	if d == "" {
+		return cli.NewExitError(fmt.Errorf(color.RedString("No data dir set.")), 1)
+	}
+	if fn, err := server.WithDataDir(d); err != nil {
+		return cli.NewExitError(err.Error(), 1)
 	} else {
 		options = append(options, fn)
 	}
@@ -116,6 +122,7 @@ func loadConfig(c *cli.Context) error {
 		Server    string `toml:"server"`
 		RemoteKey string `toml:"remote-key"`
 		DataDir   string `toml:"data-dir"`
+		Name      string `toml:"name"`
 	}{}
 
 	if _, err := toml.DecodeReader(r, &config); err != nil {
@@ -126,6 +133,7 @@ func loadConfig(c *cli.Context) error {
 	c.Set("server", config.Server)
 	c.Set("remote-key", config.RemoteKey)
 	c.Set("data", config.DataDir)
+	c.Set("name", config.Name)
 
 	return nil
 }
@@ -148,7 +156,7 @@ Commit-ID: %s
 
 	app.Action = serve
 
-	app.Flags = append(app.Flags, []cli.Flag{
+	app.Flags = append(app.Flags,
 		cli.StringFlag{
 			Name:  "config, f",
 			Usage: "configuration from `FILE`",
@@ -168,7 +176,11 @@ Commit-ID: %s
 			Value: "~/.honeytrap-agent",
 			Usage: "Store data in `DIR`",
 		},
-	}...)
+		cli.StringFlag{
+			Name:  "name, n",
+			Usage: "agent name",
+		},
+	)
 
 	return app
 }

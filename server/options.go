@@ -81,6 +81,13 @@ func WithKey(key string) OptionFn {
 	}
 }
 
+func WithName(name string) OptionFn {
+	return func(h *Agent) error {
+		h.Name = name
+		return nil
+	}
+}
+
 func WithServer(server string) OptionFn {
 	host, port, _ := net.SplitHostPort(server)
 	if port == "" {

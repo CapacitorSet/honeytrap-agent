@@ -42,7 +42,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/mimoo/disco/libdisco"
 
-	logging "github.com/op/go-logging"
+	"github.com/op/go-logging"
 )
 
 var log = logging.MustGetLogger("agent")
@@ -62,6 +62,8 @@ type Agent struct {
 
 	Server    string
 	RemoteKey []byte
+
+	Name string
 }
 
 func New(options ...OptionFn) (*Agent, error) {
@@ -197,11 +199,12 @@ func (a *Agent) Run(ctx context.Context) {
 				}()
 
 				cc.send(Handshake{
-					ProtocolVersion: 0x1,
+					ProtocolVersion: 0x2,
 					Version:         Version,
 					ShortCommitID:   ShortCommitID,
 					CommitID:        CommitID,
 					Token:           a.token,
+					Name:            a.Name,
 				})
 
 				o, err := cc.receive()
@@ -221,7 +224,7 @@ func (a *Agent) Run(ctx context.Context) {
 					rwcancel()
 
 					go func() {
-						for _ = range a.in {
+						for range a.in {
 							// drain
 						}
 					}()
@@ -238,6 +241,9 @@ func (a *Agent) Run(ctx context.Context) {
 				}()
 
 				// we know what ports to listen to
+				if len(hr.Addresses) == 0 {
+					log.Warning("No addresses sent from server")
+				}
 				for _, address := range hr.Addresses {
 					if ta, ok := address.(*net.TCPAddr); ok {
 						l, err := net.ListenTCP(address.Network(), ta)
